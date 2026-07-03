@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archives Médicales — Centre Hospitalier Flankin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f5f0e8;
+    --paper-2:#eee8dc;
+    --ink:#1a1a1a;
+    --ink-soft:#4a4a4a;
+    --muted:#77716a;
+    --line:#c8c0b0;
+    --line-soft:#d8d1c3;
+    --accent:#7a2020;
+    --accent-warn:#c8a800;
+    --accent-good:#4a8a4a;
+    --shell:#141210;
+    --shell-2:#1f1b17;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Archivo',system-ui,sans-serif;
+    background:var(--shell);
+    color:var(--ink);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'Courier Prime','Courier New',monospace}
+
+  /* ---------- SHELL / TOP BAR ---------- */
+  .topbar{
+    background:var(--shell);
+    color:var(--paper);
+    padding:0.9rem 1.5rem;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:1rem;
+    border-bottom:1px solid #333;
+    position:sticky;top:0;z-index:50;
+  }
+  .brand{display:flex;align-items:center;gap:0.8rem}
+  .cross{
+    width:30px;height:30px;flex:none;
+    display:grid;place-items:center;
+    border:1.5px solid var(--accent);
+    color:var(--accent);
+    font-weight:800;font-size:18px;
+    border-radius:4px;
+  }
+  .brand-txt strong{display:block;font-size:14px;letter-spacing:0.14em;text-transform:uppercase}
+  .brand-txt span{display:block;font-size:11px;color:#999;letter-spacing:0.1em}
+  .topbar .ref{font-family:'Courier Prime',monospace;font-size:11px;color:#888;letter-spacing:0.06em;text-align:right}
+
+  /* ---------- HERO / SEARCH ---------- */
+  .hero{
+    background:
+      repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(0,0,0,0.02) 27px,rgba(0,0,0,0.02) 28px),
+      var(--paper);
+    padding:2.5rem 1.5rem 2rem;
+    border-bottom:1px solid var(--line);
+  }
+  .hero-inner{max-width:1100px;margin:0 auto}
+  .eyebrow{
+    font-family:'Courier Prime',monospace;
+    font-size:12px;letter-spacing:0.18em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:0.6rem;
+    display:flex;align-items:center;gap:0.6rem;
+  }
+  .eyebrow::before{content:'';width:26px;height:2px;background:var(--accent)}
+  .hero h1{
+    font-size:clamp(1.9rem,5vw,3rem);
+    font-weight:800;line-height:0.98;letter-spacing:-0.02em;
+    margin-bottom:0.5rem;
+  }
+  .hero h1 .thin{font-weight:400;color:var(--ink-soft)}
+  .hero p.lede{font-size:0.98rem;color:var(--ink-soft);max-width:52ch;margin-bottom:1.6rem}
+
+  .searchbar{
+    display:flex;align-items:stretch;gap:0;
+    background:#fff;
+    border:1.5px solid var(--ink);
+    max-width:640px;
+    box-shadow:6px 6px 0 rgba(26,26,26,0.12);
+  }
+  .searchbar .icon{
+    display:grid;place-items:center;
+    padding:0 0.9rem;
+    border-right:1px solid var(--line);
+    color:var(--muted);
+  }
+  .searchbar input{
+    flex:1;border:none;outline:none;
+    font-family:'Courier Prime',monospace;
+    font-size:1rem;padding:0.9rem 0.6rem;
+    background:transparent;color:var(--ink);
+    letter-spacing:0.02em;
+  }
+  .searchbar input::placeholder{color:#b3a9a0}
+  .searchbar button.clear{
+    border:none;background:transparent;cursor:pointer;
+    padding:0 0.9rem;color:var(--muted);font-size:1.1rem;
+    display:none;
+  }
+  .searchbar button.clear:hover{color:var(--accent)}
+
+  .filters{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:1rem}
+  .chip{
+    font-family:'Courier Prime',monospace;
+    font-size:11px;letter-spacing:0.08em;text-transform:uppercase;
+    padding:0.35rem 0.75rem;
+    border:1px solid var(--line);
+    background:var(--paper-2);color:var(--ink-soft);
+    cursor:pointer;user-select:none;
+    transition:all .12s;
+  }
+  .chip:hover{border-color:var(--ink)}
+  .chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* ---------- RESULTS AREA ---------- */
+  .results-wrap{max-width:1100px;margin:0 auto;padding:1.6rem 1.5rem 4rem}
+  .results-bar{
+    display:flex;align-items:baseline;justify-content:space-between;
+    gap:1rem;margin-bottom:1.1rem;flex-wrap:wrap;
+  }
+  .results-count{
+    font-family:'Courier Prime',monospace;font-size:12px;
+    letter-spacing:0.1em;text-transform:uppercase;color:var(--paper);
+  }
+  .results-count b{color:#fff}
+  .sort-note{font-family:'Courier Prime',monospace;font-size:11px;color:#888;letter-spacing:0.06em}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+    gap:1rem;
+  }
+
+  /* ---------- CARD ---------- */
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    display:flex;flex-direction:column;
+    cursor:pointer;
+    transition:transform .12s,box-shadow .12s;
+    position:relative;overflow:hidden;
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:0 8px 0 rgba(0,0,0,0.18)}
+  .card:focus-visible{outline:3px solid var(--accent-warn);outline-offset:2px}
+  .card-top{
+    background:var(--ink);color:var(--paper);
+    padding:0.5rem 0.9rem;
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.06em;
+  }
+  .card-body{padding:1rem 0.9rem 0.9rem}
+  .card-name{font-size:1.3rem;font-weight:700;letter-spacing:-0.01em;line-height:1.1;margin-bottom:0.15rem}
+  .card-date{font-family:'Courier Prime',monospace;font-size:11.5px;color:var(--muted);letter-spacing:0.04em;margin-bottom:0.7rem}
+  .card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:0.8rem}
+  .t{
+    font-family:'Courier Prime',monospace;font-size:10px;font-weight:700;
+    letter-spacing:0.06em;text-transform:uppercase;
+    padding:2px 7px;background:var(--ink);color:var(--paper);
+  }
+  .t.red{background:var(--accent)}
+  .card-summary{font-size:0.86rem;color:var(--ink-soft);line-height:1.5;margin-bottom:0.9rem}
+  .card-foot{
+    margin-top:auto;padding-top:0.7rem;border-top:1px dashed var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .status{
+    font-family:'Courier Prime',monospace;font-size:10.5px;font-weight:700;
+    letter-spacing:0.1em;text-transform:uppercase;
+    padding:2px 8px;border:1.5px solid;
+    transform:rotate(-2deg);
+  }
+  .status.traite{color:var(--muted);border-color:var(--muted)}
+  .status.encours{color:var(--accent-warn);border-color:var(--accent-warn)}
+  .status.deces{color:var(--accent);border-color:var(--accent)}
+  .open-hint{font-family:'Courier Prime',monospace;font-size:10px;color:var(--muted);letter-spacing:0.08em}
+
+  /* ---------- EMPTY STATE ---------- */
+  .empty{
+    text-align:center;padding:3.5rem 1rem;
+    border:1px dashed #444;background:var(--shell-2);
+    color:#999;
+  }
+  .empty .big{font-family:'Courier Prime',monospace;font-size:2.4rem;color:#555;margin-bottom:0.6rem}
+  .empty p{font-family:'Courier Prime',monospace;font-size:0.85rem;letter-spacing:0.04em;line-height:1.6}
+  .empty b{color:var(--paper)}
+
+  /* ---------- MODAL ---------- */
+  .overlay{
+    position:fixed;inset:0;z-index:100;
+    background:rgba(10,8,6,0.78);
+    display:none;align-items:flex-start;justify-content:center;
+    padding:2rem 1rem;overflow-y:auto;
+  }
+  .overlay.open{display:flex}
+  .sheet{
+    background:var(--paper);
+    max-width:760px;width:100%;
+    border:1px solid var(--line);
+    animation:rise .18s ease-out;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .sheet-head{
+    background:var(--ink);color:var(--paper);
+    padding:0.7rem 1.1rem;
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'Courier Prime',monospace;font-size:12px;letter-spacing:0.06em;
+    position:sticky;top:0;
+  }
+  .sheet-head button{
+    background:transparent;border:1px solid #555;color:var(--paper);
+    font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.08em;
+    padding:0.3rem 0.7rem;cursor:pointer;text-transform:uppercase;
+  }
+  .sheet-head button:hover{border-color:var(--accent);color:#fff}
+  .sheet-body{padding:1.6rem}
+  .sheet-name{font-size:2rem;font-weight:800;letter-spacing:-0.02em;line-height:1;margin-bottom:0.3rem}
+  .sheet-meta{font-family:'Courier Prime',monospace;font-size:12.5px;color:var(--muted);letter-spacing:0.03em;margin-bottom:1rem}
+  .sheet-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.5rem}
+  .sec{margin-bottom:1.2rem;border-top:1px dashed var(--line);padding-top:0.8rem}
+  .sec-title{
+    font-family:'Courier Prime',monospace;font-size:12px;font-weight:700;
+    letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.55rem;
+    display:flex;align-items:center;gap:8px;
+  }
+  .sec-title::before{content:'';width:3px;height:14px;background:var(--ink)}
+  .sec ul{list-style:none}
+  .sec li{
+    font-family:'Courier Prime',monospace;font-size:13px;line-height:1.7;
+    padding:2px 0 2px 1.2rem;position:relative;color:var(--ink);
+  }
+  .sec li::before{content:'—';position:absolute;left:0;color:var(--muted)}
+  .sec li b{font-weight:700}
+  .box{padding:0.75rem 1rem;margin:0.8rem 0;font-family:'Courier Prime',monospace;font-size:13px;line-height:1.65}
+  .box.warn{background:#f9f0d0;border:1.5px solid var(--accent-warn);color:#5a4700;font-weight:700}
+  .box.good{background:#e8f4e8;border:1.5px solid var(--accent-good);color:#2a5a2a}
+  .box.alert{background:#fcebeb;border:1.5px solid var(--accent);color:#7a2020;font-weight:700}
+  .box .bt{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:5px;display:block}
+  .sheet-foot{
+    margin-top:1.5rem;border-top:1px dashed var(--line);padding-top:1rem;
+    display:flex;justify-content:space-between;align-items:flex-end;
+  }
+  .sheet-foot .sig-label{font-family:'Courier Prime',monospace;font-size:11px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase}
+  .sheet-foot .sig-name{font-family:'Courier Prime',monospace;font-size:16px;font-weight:700}
+  .big-stamp{
+    font-family:'Courier Prime',monospace;font-size:16px;font-weight:700;
+    padding:4px 14px;border:3px solid;opacity:0.55;
+    transform:rotate(-6deg);letter-spacing:0.14em;text-transform:uppercase;
+  }
+  .big-stamp.traite{color:var(--muted);border-color:var(--muted)}
+  .big-stamp.encours{color:var(--accent-warn);border-color:var(--accent-warn)}
+  .big-stamp.deces{color:var(--accent);border-color:var(--accent)}
+
+  mark{background:var(--accent-warn);color:var(--ink);padding:0 1px}
+
+  footer.site{
+    background:var(--shell);border-top:1px solid #333;
+    padding:1.4rem 1.5rem;text-align:center;
+    font-family:'Courier Prime',monospace;font-size:11px;color:#777;letter-spacing:0.08em;
+  }
+
+  @media(max-width:560px){
+    .hero h1{font-size:2rem}
+    .grid{grid-template-columns:1fr}
+    .sheet-body{padding:1.1rem}
+    .searchbar{box-shadow:4px 4px 0 rgba(26,26,26,0.12)}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="cross mono">✚</div>
+    <div class="brand-txt">
+      <strong>Centre Hospitalier Flankin</strong>
+      <span class="mono">Système d'archives médicales</span>
+    </div>
+  </div>
+  <div class="ref">ACCÈS RESTREINT<br>DR. MÉDOC · ADMIN</div>
+</div>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">Registre central des dossiers</div>
+    <h1>Archives <span class="thin">patients</span></h1>
+    <p class="lede">Consultez l'ensemble des dossiers médicaux, rapports opératoires et actes médico-légaux traités par l'établissement. Recherchez un patient par son nom.</p>
+
+    <div class="searchbar">
+      <span class="icon mono">⌕</span>
+      <input id="search" type="text" placeholder="Rechercher un patient…" autocomplete="off" spellcheck="false" aria-label="Rechercher un patient par nom">
+      <button class="clear mono" id="clear" aria-label="Effacer la recherche">✕</button>
+    </div>
+
+    <div class="filters" id="filters">
+      <span class="chip mono active" data-filter="all">Tous</span>
+      <span class="chip mono" data-filter="traite">Traité</span>
+      <span class="chip mono" data-filter="encours">En cours</span>
+      <span class="chip mono" data-filter="deces">Médico-légal</span>
+    </div>
+  </div>
+</section>
+
+<div class="results-wrap">
+  <div class="results-bar">
+    <div class="results-count mono" id="count">— dossiers</div>
+    <div class="sort-note mono">Trié par n° de dossier</div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">
+    <div class="big mono">∅</div>
+    <p>Aucun dossier ne correspond à <b id="empty-term">votre recherche</b>.<br>Vérifiez l'orthographe du nom du patient.</p>
+  </div>
+</div>
+
+<footer class="site mono">
+  Centre Hospitalier Flankin · Unité d'archivage · Documents confidentiels — usage médical réservé
+</footer>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="sheet-name">
+  <div class="sheet">
+    <div class="sheet-head">
+      <span id="sheet-ref" class="mono">DOSSIER</span>
+      <button id="close" class="mono">✕ Fermer</button>
+    </div>
+    <div class="sheet-body" id="sheet-body"></div>
+  </div>
+</div>
+
+<script>
+/* ============ DONNÉES PATIENTS ============ */
+const PATIENTS = [
+  {
+    id:"001", ref:"REF/MED/2026-0512-Z", name:"Zerath Cobalt",
+    date:"12 / 05 / 2026", unit:"Admission · Soins intensifs",
+    status:"traite",
+    tags:[["Brûlure",0],["Chirurgie oculaire",0],["Antécédent DPPA",0]],
+    summary:"Brûlure au flanc droit et retrait d'un œil nécrosé. Implant orbitaire provisoire posé.",
+    sections:[
+      {t:"Antécédents & état à l'admission", li:[
+        "Soins préalables prodigués par un médecin de la DPPA en amont de l'admission.",
+        "Brûlure au niveau du flanc droit — prise en charge partiellement amorcée."
+      ]},
+      {t:"Interventions réalisées", li:[
+        "Opération oculaire : retrait d'un œil nécrosé dans l'orbite droite.",
+        "Globe oculaire extrait — mise en place d'un <b>implant orbitaire provisoire</b> dans l'attente d'une prothèse oculaire définitive."
+      ]},
+      {t:"Traitement médicamenteux", li:[
+        "Antalgiques — gestion des douleurs liées aux brûlures.",
+        "Antibiotiques — prévention des infections post-opératoires.",
+        "Traitement protecteur de l'œil sain — prévention des complications sympathiques."
+      ]}
+    ]
+  },
+  {
+    id:"002", ref:"REF/MED/2026-0512-F", name:"Diane Flori",
+    date:"12 / 05 / 2026 → 13 / 05 / 2026", unit:"Admission · Urgences chirurgicales",
+    status:"traite",
+    tags:[["Polytraumatisée",1],["Brûlure",0],["Éclats de grenade",0],["Neurochirurgie",0]],
+    summary:"Polytraumatisme par explosion. Neurochirurgie crânienne, drainage thoracique, fêlure pelvienne. Réveil confirmé.",
+    boxes:[{k:"alert",t:"⚠ Erreur médicale signalée",b:"Perfusion de sang AB+ administrée par le Dr. Leon Katchum à une patiente de groupe O+ — incompatibilité ABO. Conséquence : insuffisance rénale aiguë. Correction immédiate de la perfusion. Traitement de l'insuffisance rénale engagé."}],
+    sections:[
+      {t:"Soins — membres supérieurs", li:[
+        "Brûlures et éclats de grenade aux deux bras.",
+        "Extraction des éclats — application de <b>tulle gras + bandage</b>."
+      ]},
+      {t:"Soins — membre inférieur", li:[
+        "Brûlures à la jambe — application de <b>tulle gras + bandage</b>."
+      ]},
+      {t:"Neurochirurgie — boîte crânienne", li:[
+        "Fracture de la boîte crânienne consécutive à l'explosion.",
+        "Ouverture chirurgicale — mise en place d'une <b>plaque métallique</b>.",
+        "Fermeture du scalp par <b>agrafes</b>."
+      ]},
+      {t:"Thorax — détresse respiratoire", li:[
+        "Débris métalliques logés dans le torse — retrait chirurgical.",
+        "Mise en place d'une <b>valve de drainage</b> : aiguille insérée au 2ème espace intercostal jusqu'au poumon."
+      ]},
+      {t:"Bassin", li:[
+        "Fêlure pelvienne — antalgie renforcée.",
+        "Déplacement en <b>fauteuil roulant</b> prescrit durant la convalescence."
+      ]},
+      {t:"Traitement médicamenteux", li:[
+        "<b>Mannitol</b> — réduction de l'œdème cérébral.",
+        "<b>Antibiotiques</b> — prévention des infections.",
+        "<b>Morphine</b> — antalgie majeure.",
+        "<b>Kétamine</b> — anesthésie / antalgie dissociative."
+      ]}
+    ],
+    boxesEnd:[{k:"good",t:"✓ Réveil confirmé",b:"Réveil confirmé le 13/05/2026 à 22H16."}]
+  },
+  {
+    id:"003", ref:"REF/MED/2026-0515-T", name:"Tadao",
+    date:"15 / 05 / 2026", unit:"Admission · Soins chirurgicaux",
+    status:"traite",
+    tags:[["Infection",0],["Amputation",0],["Désarticulation épaule",0]],
+    summary:"Infection du moignon après désarticulation d'épaule. Débridement chirurgical et antibiothérapie.",
+    boxes:[{k:"warn",t:"⚠ Infection post-amputation signalée",b:"Foyer infectieux actif sur le moignon de désarticulation d'épaule. Origine probable : défaut de cicatrisation ou contamination bactérienne post-opératoire antérieure à l'admission. Prise en charge chirurgicale immédiate engagée."}],
+    sections:[
+      {t:"Antécédents & état à l'admission", li:[
+        "Amputation récente au niveau de l'épaule droite — origine antérieure à l'admission.",
+        "Démangeaisons intenses localisées sur le moignon.",
+        "Infection confirmée — suintement purulent, rougeur étendue, chaleur locale."
+      ]},
+      {t:"Interventions réalisées", li:[
+        "Ablation des sutures infectées — drainage du foyer.",
+        "Lavage abondant au sérum physiologique sous pression.",
+        "Débridement chirurgical — retrait des tissus nécrosés.",
+        "Prélèvements bactériologiques per-opératoires.",
+        "Nouveau pansement stérile hydrofibres posé.",
+        "Cataplasme Baie Oran concentrée — action antibactérienne.",
+        "Comfey positionné au contact du moignon — cicatrisation accélérée."
+      ]},
+      {t:"Traitement médicamenteux", li:[
+        "<b>Antibiotiques IV</b> (Amoxicilline-Acide Clavulanique).",
+        "<b>Anti-inflammatoires locaux</b> — réduction de l'œdème du moignon."
+      ]}
+    ]
+  },
+  {
+    id:"004", ref:"REF/MED/2026-0515-AD", name:"Alex Delacroix",
+    date:"15 / 05 / 2026", unit:"Consultation externe",
+    status:"traite",
+    tags:[["Intoxication",1],["Spores Raphlesia",1],["Perte de connaissance",0]],
+    summary:"Certificat médical attestant une intoxication involontaire par spores de Raphlesia. Aucun traitement administré.",
+    sections:[
+      {t:"Attestation médicale", li:[
+        "Examen confirmant une <b>intoxication par spores de Raphlesia</b> subie sans consentement.",
+        "Perte de connaissance prolongée constatée.",
+        "Aucun traitement n'a été administré lors de la prise en charge."
+      ]},
+      {t:"Preuves médicales établies", li:[
+        "Spores identifiées au microscope — lavage broncho-alvéolaire et écouvillonnage nasal.",
+        "Composés soporifiques détectés dans le sang — taux de GABA élevé.",
+        "Taux de mélatonine artificiellement induit.",
+        "Résidus polliniques prélevés sur vêtements et peau — documentés.",
+        "Tableau clinique cohérent — dépression respiratoire, myosis, hypotonie, bradycardie."
+      ]}
+    ],
+    boxesEnd:[{k:"warn",t:"⚖ Valeur médico-légale",b:"Ce certificat constitue une preuve médicale officielle recevable auprès de la Ligue Pokémon et de toute autorité judiciaire de la région."}]
+  },
+  {
+    id:"005", ref:"REF/MED/2026-0515-YY", name:"Yummi Yamo",
+    date:"15 / 05 / 2026", unit:"Consultation externe",
+    status:"traite",
+    tags:[["Intoxication",1],["Spores Raphlesia",1],["Perte de connaissance",0]],
+    summary:"Certificat médical attestant une intoxication involontaire par spores de Raphlesia. Aucun traitement administré.",
+    sections:[
+      {t:"Attestation médicale", li:[
+        "Examen confirmant une <b>intoxication par spores de Raphlesia</b> subie sans consentement.",
+        "Perte de connaissance prolongée constatée.",
+        "Aucun traitement n'a été administré lors de la prise en charge."
+      ]},
+      {t:"Preuves médicales établies", li:[
+        "Spores identifiées au microscope — lavage broncho-alvéolaire et écouvillonnage nasal.",
+        "Composés soporifiques détectés dans le sang — taux de GABA élevé.",
+        "Taux de mélatonine artificiellement induit.",
+        "Résidus polliniques prélevés sur vêtements et peau — documentés.",
+        "Tableau clinique cohérent — dépression respiratoire, myosis, hypotonie, bradycardie."
+      ]}
+    ],
+    boxesEnd:[{k:"warn",t:"⚖ Valeur médico-légale",b:"Ce certificat constitue une preuve médicale officielle recevable auprès de la Ligue Pokémon et de toute autorité judiciaire de la région."}]
+  },
+  {
+    id:"006", ref:"REF/MED/2026-0515-TD", name:"Tony Delord",
+    date:"15 / 05 / 2026", unit:"Admission · Urgences chirurgicales",
+    status:"traite",
+    tags:[["Pendaison forcée",1],["Traumatisme cervical",0],["Chute",0],["Médico-légal",1]],
+    summary:"Pendaison forcée suivie d'une chute. Bilan neurologique rassurant, réveil confirmé, sortie autorisée.",
+    boxes:[{k:"alert",t:"⚠ Signalement médico-légal — Violence criminelle",b:"Pendaison forcée confirmée par la présence de marques de lutte. Photographies documentées. Prélèvements sous-unguéaux effectués. Signalement transmis aux autorités de la région."}],
+    sections:[
+      {t:"Antécédents & état à l'admission", li:[
+        "Patiente admise en état d'inconscience — pendaison forcée suivie d'une chute.",
+        "Aucune marque de ligature visible au niveau du cou.",
+        "Marques de lutte présentes.",
+        "Intubation réalisée en urgence à l'admission."
+      ]},
+      {t:"Interventions réalisées", li:[
+        "Intubation oro-trachéale — sécurisation des voies aériennes.",
+        "Scanner cérébral et cervical — aucune lésion structurelle.",
+        "Écho-doppler carotidien — intégrité vasculaire confirmée.",
+        "Bilan sanguin complet — dans les normes.",
+        "Cartographie des ecchymoses et prélèvements sous-unguéaux."
+      ]},
+      {t:"Traitement médicamenteux", li:[
+        "<b>Corticoïdes IV</b> — réduction œdème laryngé préventif.",
+        "<b>Mannitol</b> — anti-œdème cérébral préventif.",
+        "<b>Morphine</b> — antalgie post-traumatique.",
+        "<b>Antibiotiques</b> — prévention infection."
+      ]}
+    ],
+    boxesEnd:[{k:"good",t:"✓ Réveil confirmé — État de sortie",b:"Patiente réveillée, consciente et orientée. Aucune séquelle physique majeure. Sortie immédiate autorisée. Plus de peur que de mal."}]
+  },
+  {
+    id:"007", ref:"REF/MED/2026-0515-KU", name:"Kimaru Ukasai",
+    date:"15 / 05 / 2026", unit:"Admission · Traumatologie",
+    status:"traite",
+    tags:[["Traumatologie",0],["Fracture",0],["Chute 3-4m",0]],
+    summary:"Fractures légères du col du fémur et du calcanéum après chute. Sortie avec béquille.",
+    sections:[
+      {t:"Antécédents & état à l'admission", li:[
+        "Chute de 3 à 4 mètres — réception sur les membres inférieurs.",
+        "Patient conscient à l'arrivée — douleurs aux membres inférieurs."
+      ]},
+      {t:"Diagnostics confirmés", li:[
+        "<b>Fracture légère du col du fémur</b>.",
+        "<b>Fracture légère du calcanéum</b> — point de réception au sol."
+      ]},
+      {t:"Interventions & traitement", li:[
+        "Radiographies complètes membres inférieurs.",
+        "Antalgie renforcée — euphorie médicamenteuse favorisant la régénération osseuse.",
+        "Application de <b>crème à base de Baie Sitrus</b> — soutien régénération.",
+        "Béquille fournie — décharge partielle du membre."
+      ]}
+    ],
+    boxesEnd:[{k:"good",t:"✓ Sortie autorisée",b:"Fractures légères en consolidation accélérée. Patient autonome avec béquille. Suivi en consultation externe recommandé."}]
+  },
+  {
+    id:"001-OP", ref:"REF/MED/2026-0623-ZC", name:"Zerath Cobalt",
+    date:"23 / 06 / 2026", unit:"Chirurgie programmée · Bloc opératoire",
+    status:"traite",
+    tags:[["Chirurgie oculaire",0],["Chirurgie prothétique",0],["Orbite",0],["Main",0]],
+    summary:"Double intervention : préparation orbitaire définitive et pose de prothèse de main (pouce, index, paume). Aucune complication.",
+    sections:[
+      {t:"Contexte & antécédents", li:[
+        "Admis initialement le 12/05/2026 — œil nécrosé retiré, implant provisoire posé.",
+        "Opération programmée en deux temps — orbite définitive + prothèse de main.",
+        "Anesthésie générale — patient intubé, monitoring continu."
+      ]},
+      {t:"Partie 1 — Préparation orbitaire", li:[
+        "Retrait du conformateur provisoire — cavité bien cicatrisée.",
+        "Régularisation conjonctivale et hémostase bipolaire.",
+        "Implant orbitaire poreux définitif posé — suture résorbable 6-0.",
+        "Conformateur acrylique calibré posé — pommade Tobramycine."
+      ]},
+      {t:"Partie 2 — Prothèse de main", li:[
+        "Incision palmaire en L — exposition des métacarpes.",
+        "Plaque palmaire titane vissée sur les métacarpes.",
+        "Tendons fléchisseurs et extenseurs ancrés à la prothèse.",
+        "Pouce et index prothétiques titane clipsés et verrouillés.",
+        "Fermeture — colle Histoacryl, crème Baie Sitrus sous pansement."
+      ]}
+    ],
+    boxesEnd:[{k:"good",t:"✓ Double intervention — Aucune complication",b:"Orbite préparée, conformateur en place. Prothèse palmaire, pouce et index posés et stables. Suivi : pose de l'œil de verre définitif en consultation externe à cicatrisation complète."}]
+  },
+  {
+    id:"008", ref:"REF/MED/2026-0623-LP", name:"Léo Poulino",
+    date:"23 / 06 / 2026", unit:"Admission · Urgences chirurgicales",
+    status:"traite",
+    tags:[["Traumatologie",0],["Fractures costales",0],["Fracture fémur",0],["Chirurgie simultanée",0]],
+    summary:"Trois côtes brisées et fémur cassé, opérés simultanément. Plaques costales et clou centromédullaire. Aucune complication.",
+    sections:[
+      {t:"Antécédents & état à l'admission", li:[
+        "Trois côtes brisées — thorax latéral, confirmé à la radio.",
+        "Fracture du fémur — instabilité mécanique confirmée.",
+        "Anesthésie générale — double intervention simultanée."
+      ]},
+      {t:"Interventions — Côtes", li:[
+        "Incision latérale thoracique — exposition des trois foyers.",
+        "Fixation des trois côtes — plaques titane costales + vis 2mm.",
+        "Étanchéité pleurale confirmée — fermeture, colle Histoacryl."
+      ]},
+      {t:"Interventions — Fémur", li:[
+        "Incision latérale cuisse — réduction du foyer fracturaire.",
+        "Clou centromédullaire titane introduit et verrouillé (proximal + distal).",
+        "Alignement confirmé — attelle plâtrée postérieure posée."
+      ]},
+      {t:"Traitement médicamenteux", li:[
+        "<b>Antibiotiques IV</b>, <b>Morphine</b>, <b>Anticoagulants</b>, <b>Anti-inflammatoires</b>.",
+        "<b>Crème Baie Sitrus</b> — soutien régénération osseuse."
+      ]}
+    ],
+    boxesEnd:[{k:"good",t:"✓ Double intervention — Aucune complication",b:"Trois côtes fixées, fémur stabilisé. Suivi : rééducation respiratoire et fonctionnelle, contrôle radiologique à 6 semaines."}]
+  },
+  {
+    id:"ML-001", ref:"REF/MED/2026-0623-ML", name:"Balash Mové",
+    date:"23 / 06 / 2026 · 18H36", unit:"Unité médico-légale · Autopsie",
+    status:"deces",
+    tags:[["Décès",1],["Traumatisme crânien",1],["Autopsie",0]],
+    summary:"Autopsie médico-légale. Décès par traumatisme crânien occipital. Toxicologie négative. Dossier clôturé.",
+    sections:[
+      {t:"Informations générales", li:[
+        "Défunt : Balash Mové.",
+        "Heure de décès : 18H36 — 23/06/2026.",
+        "Lieu et circonstances : non communiqués."
+      ]},
+      {t:"Examen externe", li:[
+        "Lividités et rigidité cadavériques cohérentes avec l'heure de décès.",
+        "Aucune marque de ligature, brûlure ou piqûre.",
+        "<b>Plaie occipitale</b> — hématome et enfoncement osseux en région occipitale."
+      ]},
+      {t:"Examen interne — crâne", li:[
+        "<b>Fracture occipitale</b> — trait de fracture étoilé.",
+        "<b>Hématome extradural massif</b> — compression cérébrale immédiate.",
+        "Engagement cérébral au tronc cérébral — cause directe du décès."
+      ]},
+      {t:"Résultats toxicologiques", li:[
+        "Sang, humeur vitrée, urine — tous normaux.",
+        "Alcoolémie, drogues, médicaments — négatifs.",
+        "Panel venins Pokémon — négatif."
+      ]}
+    ],
+    boxes:[{k:"warn",t:"⚠ Lésion occipitale",b:"Enfoncement crânien compatible avec un impact de forte énergie concentré sur une surface réduite — origine à déterminer."}],
+    boxesEnd:[{k:"good",t:"✓ Toxicologie — Dossier clôturé",b:"Aucune substance toxique détectée. Cause du décès exclusivement traumatique. Absence de signes de lutte. Rapport transmis aux autorités."}]
+  }
+];
+
+/* ============ RENDU ============ */
+const grid = document.getElementById('grid');
+const countEl = document.getElementById('count');
+const emptyEl = document.getElementById('empty');
+const emptyTerm = document.getElementById('empty-term');
+const searchEl = document.getElementById('search');
+const clearBtn = document.getElementById('clear');
+let activeFilter = 'all';
+
+const statusLabel = {traite:'Traité', encours:'En cours', deces:'Décès'};
+
+function highlight(text, term){
+  if(!term) return text;
+  const esc = term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return text.replace(new RegExp('('+esc+')','ig'),'<mark>$1</mark>');
+}
+
+function cardHTML(p, term){
+  const tags = p.tags.map(t=>`<span class="t ${t[1]?'red':''}">${t[0]}</span>`).join('');
+  return `<article class="card" tabindex="0" data-id="${p.id}" aria-label="Ouvrir le dossier de ${p.name}">
+    <div class="card-top">
+      <span>DOSSIER #${p.id}</span>
+      <span>${p.ref}</span>
+    </div>
+    <div class="card-body">
+      <div class="card-name">${highlight(p.name, term)}</div>
+      <div class="card-date">${p.date} · ${p.unit}</div>
+      <div class="card-tags">${tags}</div>
+      <div class="card-summary">${p.summary}</div>
+      <div class="card-foot">
+        <span class="status ${p.status}">${statusLabel[p.status]}</span>
+        <span class="open-hint">Ouvrir ▸</span>
+      </div>
+    </div>
+  </article>`;
+}
+
+function render(){
+  const term = searchEl.value.trim();
+  const termLow = term.toLowerCase();
+  clearBtn.style.display = term ? 'block' : 'none';
+
+  let list = PATIENTS.filter(p=>{
+    const matchName = p.name.toLowerCase().includes(termLow);
+    const matchFilter = activeFilter==='all' || p.status===activeFilter;
+    return matchName && matchFilter;
+  });
+
+  if(list.length===0){
+    grid.innerHTML='';
+    emptyEl.style.display='block';
+    emptyTerm.textContent = term ? '« '+term+' »' : 'ce filtre';
+    countEl.innerHTML='0 dossier';
+    return;
+  }
+  emptyEl.style.display='none';
+  grid.innerHTML = list.map(p=>cardHTML(p,term)).join('');
+  countEl.innerHTML = `<b>${list.length}</b> dossier${list.length>1?'s':''}${term?' · recherche active':''}`;
+}
+
+/* ============ MODAL ============ */
+const overlay = document.getElementById('overlay');
+const sheetBody = document.getElementById('sheet-body');
+const sheetRef = document.getElementById('sheet-ref');
+let lastFocused = null;
+
+function boxHTML(b){
+  return `<div class="box ${b.k}"><span class="bt">${b.t}</span>${b.b}</div>`;
+}
+
+function openSheet(id){
+  const p = PATIENTS.find(x=>x.id===id);
+  if(!p) return;
+  lastFocused = document.activeElement;
+  sheetRef.textContent = `DOSSIER #${p.id} · ${p.ref}`;
+  const tags = p.tags.map(t=>`<span class="t ${t[1]?'red':''}">${t[0]}</span>`).join('');
+  const boxes = (p.boxes||[]).map(boxHTML).join('');
+  const secs = (p.sections||[]).map(s=>`
+    <div class="sec">
+      <div class="sec-title">${s.t}</div>
+      <ul>${s.li.map(x=>`<li>${x}</li>`).join('')}</ul>
+    </div>`).join('');
+  const boxesEnd = (p.boxesEnd||[]).map(boxHTML).join('');
+  sheetBody.innerHTML = `
+    <div id="sheet-name" class="sheet-name">${p.name}</div>
+    <div class="sheet-meta">${p.date} &nbsp;·&nbsp; ${p.unit}</div>
+    <div class="sheet-tags">${tags}</div>
+    ${boxes}
+    ${secs}
+    ${boxesEnd}
+    <div class="sheet-foot">
+      <div class="big-stamp ${p.status}">${p.status==='deces'?'Clôturé':statusLabel[p.status]}</div>
+      <div style="text-align:right">
+        <div class="sig-label">${p.status==='deces'?'Médecin légiste':'Médecin responsable'}</div>
+        <div class="sig-name">Dr. Médoc</div>
+      </div>
+    </div>`;
+  overlay.classList.add('open');
+  document.body.style.overflow='hidden';
+  document.getElementById('close').focus();
+}
+
+function closeSheet(){
+  overlay.classList.remove('open');
+  document.body.style.overflow='';
+  if(lastFocused) lastFocused.focus();
+}
+
+/* ============ EVENTS ============ */
+searchEl.addEventListener('input', render);
+clearBtn.addEventListener('click', ()=>{searchEl.value='';render();searchEl.focus()});
+
+document.getElementById('filters').addEventListener('click', e=>{
+  const chip = e.target.closest('.chip');
+  if(!chip) return;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  activeFilter = chip.dataset.filter;
+  render();
+});
+
+grid.addEventListener('click', e=>{
+  const card = e.target.closest('.card');
+  if(card) openSheet(card.dataset.id);
+});
+grid.addEventListener('keydown', e=>{
+  if(e.key==='Enter'||e.key===' '){
+    const card = e.target.closest('.card');
+    if(card){e.preventDefault();openSheet(card.dataset.id);}
+  }
+});
+
+document.getElementById('close').addEventListener('click', closeSheet);
+overlay.addEventListener('click', e=>{if(e.target===overlay) closeSheet();});
+document.addEventListener('keydown', e=>{if(e.key==='Escape'&&overlay.classList.contains('open')) closeSheet();});
+
+render();
+</script>
+</body>
+</html>
